@@ -94,7 +94,7 @@ class SKUClassifier:
 
         for _, row in self.df_dicionario.iterrows():
             coluna = row["Coluna Alvo"]
-            if coluna not in self.colunas_alvo:
+            if TextUtils.normalizar(coluna) not in self.colunas_alvo:
                 continue
 
             regex = row["Regex"]
@@ -152,7 +152,7 @@ class SKUClassifier:
 
             df_resultado[coluna_saida] = df_resultado[coluna_saida].astype(object)
 
-        mapa_saida[coluna_alvo] = coluna_saida
+            mapa_saida[coluna_alvo] = coluna_saida
 
         auditoria: list[dict[str, Any]] = []
         total = len(df_resultado)
