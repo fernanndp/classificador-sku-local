@@ -1,0 +1,65 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+
+# Ambientes virtuais
+.venv/
+venv/
+env/
+ENV/
+
+# Configurações locais
+.env
+.env.*
+*.env
+
+# Streamlit
+.streamlit/secrets.toml
+.streamlit/config.toml
+
+# Arquivos de dados enviados pelo usuário
+*.xlsx
+*.xls
+*.csv
+*.json
+*.zip
+# Resultados gerados
+resultados/
+outputs/
+output/
+downloads/
+BASE_SKUS_CLASSIFICADA_LOCAL.xlsx
+*_CLASSIFICADA*.xlsx
+*_classificada*.xlsx
+
+# Logs
+*.log
+logs/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs/Editores
+.vscode/
+.idea/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Testes/cache
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Build/dist
+build/
+dist/
+*.egg-info/
