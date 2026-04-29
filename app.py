@@ -27,12 +27,21 @@ CSS = """
     }
     .hero h1 {margin: 0; font-size: 2.05rem;}
     .hero p {margin: .35rem 0 0; color: #dbeafe; font-size: 1rem;}
-    .step-card {
-        padding: 1rem;
-        border-radius: 18px;
-        border: 1px solid #e2e8f0;
-        background: #ffffff;
-        box-shadow: 0 10px 25px rgba(15,23,42,.05);
+   .step-card {
+    padding: 1rem;
+    border-radius: 18px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #0f172a !important;
+    box-shadow: 0 10px 25px rgba(15,23,42,.05);
+    }
+    
+    .step-card * {
+        color: #0f172a !important;
+    }
+    
+    .step-card b {
+        color: #1d4ed8 !important;
     }
     .metric-card {
         padding: .9rem 1rem;
