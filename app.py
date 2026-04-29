@@ -95,18 +95,10 @@ COLUNAS_DESCRICAO_SUGERIDAS = [
 
 
 def carregar_planilha(uploaded_file) -> pd.DataFrame:
-    """
-    Lê XLSX/CSV enviado pelo Streamlit sem salvar em disco.
-
-    Correção importante:
-    alguns CSVs exportados pelo Excel vêm em UTF-16, começando com bytes FF FE.
-    Quando o pandas tenta ler isso como UTF-8, aparece o erro:
-    'utf-8' codec can't decode byte 0xff in position 0.
-    """
     nome = uploaded_file.name.lower()
     conteudo = uploaded_file.getvalue()
 
-    # XLSX normalmente começa com PK. Isso também ajuda caso o arquivo esteja com extensão errada.
+
     if nome.endswith((".xlsx", ".xlsm", ".xls")) or conteudo[:2] == b"PK":
         return pd.read_excel(io.BytesIO(conteudo))
 
@@ -308,7 +300,7 @@ st.markdown(
     """
     <div class="hero">
         <h1>🏷️ Classificador Local de SKUs</h1>
-        <p>Classificação 100% local por dicionário de regex, sem Bluesoft, sem Open Food Facts e sem salvar os arquivos enviados.</p>
+        <p>Classificação 100% local por dicionário de regex.</p>
     </div>
     """,
     unsafe_allow_html=True,
