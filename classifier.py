@@ -146,9 +146,13 @@ class SKUClassifier:
         for coluna_alvo in self.colunas_alvo:
             existente = TextUtils.coluna_case_insensitive(df_resultado, coluna_alvo)
             coluna_saida = existente or coluna_alvo
+
             if coluna_saida not in df_resultado.columns:
                 df_resultado[coluna_saida] = ""
-            mapa_saida[coluna_alvo] = coluna_saida
+
+            df_resultado[coluna_saida] = df_resultado[coluna_saida].astype(object)
+
+        mapa_saida[coluna_alvo] = coluna_saida
 
         auditoria: list[dict[str, Any]] = []
         total = len(df_resultado)
