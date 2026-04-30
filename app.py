@@ -604,6 +604,72 @@ def desenhar_dashboard(df_resultado: pd.DataFrame, df_resumo: pd.DataFrame, df_a
                 st.info("Sem dados para esta coluna.")
 
 
+
+
+def montar_descricao_linha_auditoria(row: pd.Series, colunas_texto: list[str]) -> str:
+    partes = []
+
+    for coluna in colunas_texto:
+        valor = row.get(coluna, "")
+
+        if pd.isna(valor):
+            continue
+
+        valor_texto = str(valor).strip()
+
+        if valor_texto and valor_texto.lower() not in ["none", "nan"]:
+            partes.append(f"{coluna}: {valor_texto}")
+
+    return " | ".join(partes)
+
+
+def garantir_descricao_na_auditoria(
+    df_base: pd.DataFrame,
+    df_auditoria: pd.DataFrame,
+    colunas_texto: list[str],
+) -> pd.DataFrame:
+    """
+    Garante que a aba Auditoria tenha:
+    - descricao_sku_usada: texto original das colunas selecionadas
+    - texto_normalizado_usado: texto normalizado usado pelo regex
+    """
+    if df_auditoria is None or df_auditoria.empty:
+        return df_auditoria
+
+    df_auditoria = df_auditoria.copy()
+
+    mapa_descricao = {}
+    mapa_texto_normalizado = {}
+
+    for idx, row in df_base.iterrows():
+        linha_base = idx + 2 if isinstance(idx, int) else idx
+        mapa_descricao[linha_base] = montar_descricao_linha_auditoria(row, colunas_texto)
+        mapa_texto_normalizado[linha_base] = TextUtils.combinar_texto_linha(row, colunas_texto)
+
+    if "descricao_sku_usada" not in df_auditoria.columns:
+        df_auditoria["descricao_sku_usada"] = df_auditoria["linha_base"].map(mapa_descricao).fillna("")
+
+    if "texto_normalizado_usado" not in df_auditoria.columns:
+        df_auditoria["texto_normalizado_usado"] = df_auditoria["linha_base"].map(mapa_texto_normalizado).fillna("")
+
+    # Reordena para a descrição ficar antes da regex
+    ordem_preferida = [
+        "linha_base",
+        "coluna_alvo",
+        "coluna_saida",
+        "status",
+        "classificacao",
+        "descricao_sku_usada",
+        "texto_normalizado_usado",
+        "regex_usada",
+    ]
+
+    colunas_ordenadas = [c for c in ordem_preferida if c in df_auditoria.columns]
+    outras_colunas = [c for c in df_auditoria.columns if c not in colunas_ordenadas]
+
+    return df_auditoria[colunas_ordenadas + outras_colunas]
+
+
 # =========================================================
 # CABEÇALHO
 # =========================================================
@@ -735,7 +801,7 @@ with st.sidebar:
         help="Se deixar vazio, o app só preenche células vazias, '-', NULL ou N/D.",
     )
 
-    executar = st.button("Iniciar classificação local", type="primary", use_container_width=True)
+    executar = st.button("🚀 Iniciar classificação local", type="primary", use_container_width=True)
 
 
 # =========================================================
@@ -758,6 +824,7 @@ with st.expander("Prévia da base", expanded=False):
 with st.expander("Prévia do dicionário", expanded=False):
     st.caption("Mostrando apenas as primeiras 40 regras do dicionário enviado.")
     st.dataframe(df_dict.head(40), use_container_width=True)
+
 
 if not executar:
     st.info("Configure as colunas na barra lateral e clique em **Iniciar classificação local**.")
@@ -798,6 +865,12 @@ try:
             colunas_texto=colunas_texto,
             colunas_sobrescrever=colunas_sobrescrever,
             callback_progresso=atualizar_progresso,
+        )
+
+        df_auditoria = garantir_descricao_na_auditoria(
+            df_base=df_base,
+            df_auditoria=df_auditoria,
+            colunas_texto=colunas_texto,
         )
 
         df_resumo = SKUClassifier.montar_resumo(df_auditoria)
