@@ -7,6 +7,7 @@ import streamlit as st
 from classifier import SKUClassifier
 from utils import TextUtils
 
+
 st.set_page_config(
     page_title="Classificador Local de SKUs",
     page_icon="🏷️",
@@ -14,75 +15,335 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+
 CSS = """
 <style>
-    .main .block-container {padding-top: 1.5rem; padding-bottom: 2rem;}
-    .hero {
-        padding: 1.25rem 1.4rem;
-        border-radius: 22px;
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 52%, #334155 100%);
-        color: white;
-        margin-bottom: 1rem;
-        border: 1px solid rgba(255,255,255,.12);
+    /* =========================================================
+       BASE
+    ========================================================= */
+    :root {
+        --bg-main: #0b1020;
+        --bg-card: #ffffff;
+        --bg-card-soft: #f8fafc;
+        --text-main: #0f172a;
+        --text-muted: #64748b;
+        --brand: #ef4444;
+        --brand-dark: #dc2626;
+        --brand-blue: #2563eb;
+        --border: #e2e8f0;
+        --shadow: 0 18px 45px rgba(15, 23, 42, .14);
+        --radius: 22px;
     }
-    .hero h1 {margin: 0; font-size: 2.05rem;}
-    .hero p {margin: .35rem 0 0; color: #dbeafe; font-size: 1rem;}
-   .step-card {
-    padding: 1rem;
-    border-radius: 18px;
-    border: 1px solid #e2e8f0;
-    background: #ffffff;
-    color: #0f172a !important;
-    box-shadow: 0 10px 25px rgba(15,23,42,.05);
-    }
-    
-    .step-card * {
-        color: #0f172a !important;
-    }
-    
-    .step-card b {
-        color: #1d4ed8 !important;
-    }
-    .metric-card {
-        padding: .9rem 1rem;
-        border: 1px solid #e2e8f0;
-        background: #f8fafc;
-        border-radius: 16px;
-        min-height: 94px;
-    }
-    .metric-card .label {font-size: .82rem; color: #64748b; margin-bottom: .25rem;}
-    .metric-card .value {font-size: 1.55rem; font-weight: 800; color: #0f172a;}
-    .metric-card .hint {font-size: .78rem; color: #64748b; margin-top: .2rem;}
-    div[data-testid="stMetricValue"] {font-size: 1.5rem;}
-    div[data-testid="stDataFrame"] {border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden;}
 
-    /* Tradução visual do componente padrão st.file_uploader do Streamlit.
-       O Streamlit não expõe esses textos como parâmetro, então a troca é feita por CSS. */
-    div[data-testid="stFileUploaderDropzoneInstructions"] span {
-        font-size: 0 !important;
+    .main .block-container {
+        padding-top: 1.4rem;
+        padding-bottom: 3rem;
+        max-width: 1320px;
     }
-    div[data-testid="stFileUploaderDropzoneInstructions"] span::after {
-        content: "Arraste e solte o arquivo aqui";
-        font-size: 1rem !important;
+
+    section[data-testid="stSidebar"] {
+        border-right: 1px solid rgba(148, 163, 184, .20);
+    }
+
+    section[data-testid="stSidebar"] > div {
+        padding-top: 1.2rem;
+    }
+
+    /* Corrige textos selecionados/contraste em tema escuro */
+    ::selection {
+        background: rgba(37, 99, 235, .35);
+        color: #ffffff;
+    }
+
+    /* =========================================================
+       HERO
+    ========================================================= */
+    .hero {
+        position: relative;
+        overflow: hidden;
+        padding: 2rem 2.1rem;
+        border-radius: 28px;
+        background:
+            radial-gradient(circle at top right, rgba(96, 165, 250, .35), transparent 34%),
+            linear-gradient(135deg, #111827 0%, #1e293b 55%, #334155 100%);
+        color: white;
+        margin-bottom: 1.2rem;
+        border: 1px solid rgba(255,255,255,.12);
+        box-shadow: 0 24px 70px rgba(2, 6, 23, .32);
+    }
+
+    .hero::after {
+        content: "";
+        position: absolute;
+        inset: auto -80px -120px auto;
+        width: 300px;
+        height: 300px;
+        background: rgba(239, 68, 68, .23);
+        filter: blur(18px);
+        border-radius: 999px;
+    }
+
+    .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        padding: .35rem .7rem;
+        border-radius: 999px;
+        background: rgba(255,255,255,.10);
+        border: 1px solid rgba(255,255,255,.16);
+        color: #e0f2fe;
+        font-weight: 700;
+        font-size: .84rem;
+        margin-bottom: .85rem;
+    }
+
+    .hero h1 {
+        margin: 0;
+        font-size: clamp(2rem, 4vw, 3.05rem);
+        line-height: 1.03;
+        letter-spacing: -.045em;
+        color: #ffffff !important;
+    }
+
+    .hero p {
+        margin: .75rem 0 0;
+        color: #dbeafe !important;
+        font-size: 1.06rem;
+        max-width: 880px;
+    }
+
+    .hero-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: .75rem;
+        margin-top: 1.2rem;
+        max-width: 930px;
+    }
+
+    .hero-mini {
+        padding: .75rem .85rem;
+        border-radius: 16px;
+        background: rgba(255,255,255,.09);
+        border: 1px solid rgba(255,255,255,.14);
+        color: #eff6ff !important;
+        font-size: .92rem;
+    }
+
+    .hero-mini b {
+        color: #ffffff !important;
+    }
+
+    /* =========================================================
+       CARDS DE ETAPAS
+    ========================================================= */
+    .steps-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .step-card {
+        position: relative;
+        padding: 1.1rem 1.1rem 1.15rem;
+        border-radius: 22px;
+        border: 1px solid var(--border);
+        background: #ffffff;
+        color: var(--text-main) !important;
+        box-shadow: var(--shadow);
+        min-height: 140px;
+    }
+
+    .step-card * {
+        color: var(--text-main) !important;
+    }
+
+    .step-number {
+        width: 34px;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        background: #eff6ff;
+        color: #1d4ed8 !important;
+        font-weight: 900;
+        margin-bottom: .65rem;
+    }
+
+    .step-card h3 {
+        margin: 0 0 .35rem;
+        font-size: 1.05rem;
+        letter-spacing: -.01em;
+    }
+
+    .step-card p {
+        margin: 0;
+        color: #475569 !important;
+        line-height: 1.45;
+        font-size: .95rem;
+    }
+
+    /* =========================================================
+       MÉTRICAS
+    ========================================================= */
+    .metric-card {
+        padding: 1rem 1rem 1.05rem;
+        border: 1px solid var(--border);
+        background:
+            linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        border-radius: 20px;
+        min-height: 118px;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, .09);
+    }
+
+    .metric-card .label {
+        font-size: .82rem;
+        color: #64748b !important;
+        margin-bottom: .4rem;
         font-weight: 700;
     }
-    div[data-testid="stFileUploaderDropzoneInstructions"] small {
-        font-size: 0 !important;
+
+    .metric-card .value {
+        font-size: 1.85rem;
+        line-height: 1;
+        font-weight: 900;
+        color: #0f172a !important;
+        letter-spacing: -.035em;
     }
-    div[data-testid="stFileUploaderDropzoneInstructions"] small::after {
+
+    .metric-card .hint {
+        font-size: .80rem;
+        color: #64748b !important;
+        margin-top: .55rem;
+    }
+
+    .metric-card .bar {
+        height: 6px;
+        border-radius: 999px;
+        background: #e2e8f0;
+        margin-top: .8rem;
+        overflow: hidden;
+    }
+
+    .metric-card .bar span {
+        display: block;
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #2563eb, #22c55e);
+    }
+
+    /* =========================================================
+       PAINEL / SEÇÕES
+    ========================================================= */
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: .55rem;
+        margin: 1.25rem 0 .65rem;
+    }
+
+    .section-title h2 {
+        margin: 0;
+        font-size: 1.45rem;
+        letter-spacing: -.03em;
+    }
+
+    .soft-panel {
+        padding: 1.15rem;
+        border-radius: 22px;
+        border: 1px solid rgba(148, 163, 184, .22);
+        background: rgba(15, 23, 42, .035);
+        margin: .75rem 0 1rem;
+    }
+
+    div[data-testid="stDataFrame"] {
+        border: 1px solid rgba(148, 163, 184, .35);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+
+    div[data-testid="stProgress"] > div > div > div > div {
+        background: linear-gradient(90deg, #ef4444, #f97316, #22c55e);
+    }
+
+    /* Botão principal */
+    div.stButton > button[kind="primary"],
+    div.stDownloadButton > button[kind="primary"] {
+        border-radius: 14px !important;
+        border: 0 !important;
+        background: linear-gradient(135deg, #ef4444, #f97316) !important;
+        color: white !important;
+        font-weight: 900 !important;
+        min-height: 48px;
+        box-shadow: 0 12px 28px rgba(239, 68, 68, .25);
+    }
+
+    div.stButton > button[kind="primary"]:hover,
+    div.stDownloadButton > button[kind="primary"]:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 16px 34px rgba(239, 68, 68, .33);
+    }
+
+    /* =========================================================
+       UPLOADER EM PORTUGUÊS
+       Observação: o texto original do Streamlit continua existindo,
+       mas fica visualmente substituído por pseudo-elementos.
+    ========================================================= */
+    div[data-testid="stFileUploaderDropzone"] {
+        border-radius: 16px !important;
+        border: 1px dashed rgba(148, 163, 184, .45) !important;
+        background: rgba(15, 23, 42, .20) !important;
+    }
+
+    div[data-testid="stFileUploaderDropzone"] button {
+        border-radius: 12px !important;
+        font-weight: 800 !important;
+    }
+
+    div[data-testid="stFileUploaderDropzone"] small {
+        visibility: hidden;
+        position: relative;
+    }
+
+    div[data-testid="stFileUploaderDropzone"] small::after {
         content: "Limite de 200 MB por arquivo • XLSX, CSV";
-        font-size: .875rem !important;
-        color: inherit;
+        visibility: visible;
+        position: absolute;
+        left: 0;
+        top: 0;
+        white-space: nowrap;
+        color: #cbd5e1;
     }
-    div[data-testid="stFileUploaderDropzone"] button,
-    div[data-testid="stFileUploaderDropzone"] button p,
-    div[data-testid="stFileUploaderDropzone"] button span {
-        font-size: 0 !important;
+
+    div[data-testid="stFileUploaderDropzone"] [data-testid="stMarkdownContainer"] p {
+        visibility: hidden;
+        position: relative;
     }
-    div[data-testid="stFileUploaderDropzone"] button::after {
-        content: "Procurar arquivos";
-        font-size: 1rem !important;
-        font-weight: 600;
+
+    div[data-testid="stFileUploaderDropzone"] [data-testid="stMarkdownContainer"] p::after {
+        content: "Arraste e solte o arquivo aqui";
+        visibility: visible;
+        position: absolute;
+        left: 0;
+        top: 0;
+        white-space: normal;
+        color: #ffffff;
+        font-weight: 800;
+    }
+
+    /* =========================================================
+       RESPONSIVO
+    ========================================================= */
+    @media (max-width: 900px) {
+        .hero-grid,
+        .steps-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .hero {
+            padding: 1.5rem;
+        }
     }
 </style>
 """
@@ -104,38 +365,26 @@ COLUNAS_DESCRICAO_SUGERIDAS = [
 
 
 def carregar_planilha(uploaded_file) -> pd.DataFrame:
+    """
+    Lê XLSX/CSV direto do upload, sem salvar em disco.
+    Para CSV, tenta encodings comuns do Excel/Windows.
+    """
     nome = uploaded_file.name.lower()
     conteudo = uploaded_file.getvalue()
 
-
-    if nome.endswith((".xlsx", ".xlsm", ".xls")) or conteudo[:2] == b"PK":
+    if nome.endswith((".xlsx", ".xls")):
         return pd.read_excel(io.BytesIO(conteudo))
 
-    # CSV/TXT: tenta os encodings mais comuns no Brasil/Excel.
     encodings = ["utf-8-sig", "utf-8", "utf-16", "utf-16-le", "utf-16-be", "cp1252", "latin1"]
-    separadores = [None, ";", ",", "\t", "|"]
-    erros = []
+    ultimo_erro = None
 
     for encoding in encodings:
-        for sep in separadores:
-            try:
-                df = pd.read_csv(
-                    io.BytesIO(conteudo),
-                    sep=sep,
-                    engine="python",
-                    encoding=encoding,
-                    dtype=str,
-                )
-                # Evita aceitar uma leitura ruim que trouxe tudo em uma única coluna quando há separador claro.
-                if df.shape[1] > 1 or sep is not None:
-                    return df
-            except Exception as erro:
-                erros.append(f"encoding={encoding}, sep={sep}: {erro}")
+        try:
+            return pd.read_csv(io.BytesIO(conteudo), sep=None, engine="python", encoding=encoding)
+        except Exception as erro:
+            ultimo_erro = erro
 
-    raise ValueError(
-        "Não consegui ler o arquivo. Salve como .xlsx ou CSV UTF-8/CSV separado por ponto e vírgula. "
-        f"Últimos erros testados: {' | '.join(erros[-3:])}"
-    )
+    raise ValueError(f"Não foi possível ler o CSV. Último erro: {ultimo_erro}")
 
 
 def gerar_dicionario_exemplo() -> bytes:
@@ -170,10 +419,12 @@ def gerar_dicionario_exemplo() -> bytes:
         ["LINHA", r"\b(LIGHT)\b", "LIGHT", 20, "SIM", ""],
         ["LINHA", r".*", "REGULAR", 999, "SIM", ""],
     ]
+
     df = pd.DataFrame(
         dados,
         columns=["Coluna Alvo", "Regex", "Classificacao", "Prioridade", "Ativo", "Observacao"],
     )
+
     buffer = io.BytesIO()
     with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
         df.to_excel(writer, index=False, sheet_name="Dicionario")
@@ -181,9 +432,9 @@ def gerar_dicionario_exemplo() -> bytes:
             {
                 "Campo": ["Coluna Alvo", "Regex", "Classificacao", "Prioridade", "Ativo", "Observacao"],
                 "Como usar": [
-                    "Nome da coluna que será criada/preenchida na base, por exemplo: CATEGORIA, MARCA, SABOR.",
-                    "Expressão regular que será procurada no texto das colunas escolhidas da base.",
-                    "Valor final que entrará na coluna alvo quando a regex casar.",
+                    "Nome da coluna que será criada/preenchida na base. Ex.: CATEGORIA, MARCA, SABOR.",
+                    "Expressão regular procurada no texto das colunas escolhidas da base.",
+                    "Valor final preenchido quando a regex casar.",
                     "Ordem de execução dentro da mesma coluna alvo. Menor número roda primeiro.",
                     "Use SIM para ativar a regra. Use NAO para ignorar temporariamente.",
                     "Campo livre para explicar a regra.",
@@ -191,6 +442,7 @@ def gerar_dicionario_exemplo() -> bytes:
             }
         )
         instrucoes.to_excel(writer, index=False, sheet_name="Como usar")
+
     return buffer.getvalue()
 
 
@@ -205,36 +457,58 @@ def preparar_download_excel(df_resultado: pd.DataFrame, df_resumo: pd.DataFrame,
 
 def sugerir_colunas_texto(colunas: Iterable[str]) -> list[str]:
     sugestoes = []
+
     for coluna in colunas:
         coluna_norm = TextUtils.normalizar(coluna)
         if any(token in coluna_norm for token in COLUNAS_DESCRICAO_SUGERIDAS):
             sugestoes.append(coluna)
+
     if sugestoes:
         return sugestoes[:3]
 
-    colunas_texto = []
-    for coluna in colunas:
-        colunas_texto.append(coluna)
-        if len(colunas_texto) == 1:
-            break
-    return colunas_texto
+    return [list(colunas)[0]] if colunas else []
 
 
 def listar_colunas_dicionario(df_dict: pd.DataFrame) -> list[str]:
     df_tmp = df_dict.copy()
     df_tmp.columns = [SKUClassifier._nome_canonico_coluna(c) for c in df_tmp.columns]
+
     if "Coluna Alvo" not in df_tmp.columns:
         return []
+
     return sorted(df_tmp["Coluna Alvo"].dropna().map(TextUtils.normalizar).unique().tolist())
 
 
-def desenhar_metric_card(label: str, value: str, hint: str = ""):
+def desenhar_metric_card(label: str, value: str, hint: str = "", progress: float | None = None):
+    progress_html = ""
+
+    if progress is not None:
+        largura = max(0, min(progress, 100))
+        progress_html = f"""
+        <div class="bar">
+            <span style="width: {largura}%"></span>
+        </div>
+        """
+
     st.markdown(
         f"""
         <div class="metric-card">
             <div class="label">{label}</div>
             <div class="value">{value}</div>
             <div class="hint">{hint}</div>
+            {progress_html}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def abrir_secao(titulo: str, icone: str):
+    st.markdown(
+        f"""
+        <div class="section-title">
+            <span style="font-size:1.55rem;">{icone}</span>
+            <h2>{titulo}</h2>
         </div>
         """,
         unsafe_allow_html=True,
@@ -242,16 +516,19 @@ def desenhar_metric_card(label: str, value: str, hint: str = ""):
 
 
 def desenhar_dashboard(df_resultado: pd.DataFrame, df_resumo: pd.DataFrame, df_auditoria: pd.DataFrame, colunas_alvo: list[str]):
-    st.subheader("📊 Estatísticas da classificação")
+    abrir_secao("Estatísticas da classificação", "📊")
 
     total_linhas = len(df_resultado)
     total_colunas = len(colunas_alvo)
     total_celulas = int(total_linhas * total_colunas)
+
     classificados = int(df_resumo["classificados"].sum()) if not df_resumo.empty else 0
     fallback = int(df_resumo["fallback"].sum()) if not df_resumo.empty else 0
     preservados = int(df_resumo["preservados"].sum()) if not df_resumo.empty else 0
     nao_classificados = int(df_resumo["nao_classificados"].sum()) if not df_resumo.empty else 0
-    taxa = round(((classificados + fallback + preservados) / total_celulas * 100), 2) if total_celulas else 0
+
+    preenchidos = classificados + fallback + preservados
+    taxa = round((preenchidos / total_celulas * 100), 2) if total_celulas else 0
 
     c1, c2, c3, c4, c5 = st.columns(5)
     with c1:
@@ -263,30 +540,51 @@ def desenhar_dashboard(df_resultado: pd.DataFrame, df_resumo: pd.DataFrame, df_a
     with c4:
         desenhar_metric_card("Fallbacks", f"{fallback:,}".replace(",", "."), "regra .* aplicada")
     with c5:
-        desenhar_metric_card("Taxa preenchida", f"{taxa}%", "inclui preservados")
+        desenhar_metric_card("Taxa preenchida", f"{taxa}%", "inclui preservados", progress=taxa)
 
     st.markdown("#### Resumo por coluna")
     st.dataframe(df_resumo, use_container_width=True, hide_index=True)
 
-    col_graf1, col_graf2 = st.columns([1.2, 1])
+    col_graf1, col_graf2 = st.columns([1.1, 1])
+
     with col_graf1:
         st.markdown("#### Quantidade por status")
-        status_chart = df_auditoria["status"].value_counts().rename_axis("status").reset_index(name="quantidade")
-        st.bar_chart(status_chart, x="status", y="quantidade", use_container_width=True)
+
+        if not df_auditoria.empty and "status" in df_auditoria.columns:
+            status_chart = df_auditoria["status"].value_counts().rename_axis("status").reset_index(name="quantidade")
+            st.bar_chart(status_chart, x="status", y="quantidade", use_container_width=True)
+        else:
+            st.info("Sem dados de auditoria para montar o gráfico.")
 
     with col_graf2:
         st.markdown("#### Colunas com maior não classificação")
-        nao_chart = df_resumo[["coluna_alvo", "nao_classificados"]].sort_values("nao_classificados", ascending=False)
-        st.bar_chart(nao_chart, x="coluna_alvo", y="nao_classificados", use_container_width=True)
+
+        if not df_resumo.empty and "nao_classificados" in df_resumo.columns:
+            nao_chart = df_resumo[["coluna_alvo", "nao_classificados"]].sort_values("nao_classificados", ascending=False)
+            st.bar_chart(nao_chart, x="coluna_alvo", y="nao_classificados", use_container_width=True)
+        else:
+            st.info("Sem dados para montar o gráfico.")
 
     st.markdown("#### Distribuição de valores por coluna classificada")
+
+    if not colunas_alvo:
+        st.info("Nenhuma coluna alvo selecionada.")
+        return
+
     abas = st.tabs(colunas_alvo)
+
     for aba, coluna_alvo in zip(abas, colunas_alvo):
         with aba:
             coluna_saida = None
-            matches = df_auditoria.loc[df_auditoria["coluna_alvo"] == coluna_alvo, "coluna_saida"].dropna().unique()
-            if len(matches):
-                coluna_saida = matches[0]
+
+            if not df_auditoria.empty and "coluna_saida" in df_auditoria.columns:
+                matches = df_auditoria.loc[
+                    df_auditoria["coluna_alvo"] == coluna_alvo,
+                    "coluna_saida",
+                ].dropna().unique()
+
+                if len(matches):
+                    coluna_saida = matches[0]
 
             if coluna_saida and coluna_saida in df_resultado.columns:
                 dist = (
@@ -299,22 +597,39 @@ def desenhar_dashboard(df_resultado: pd.DataFrame, df_resumo: pd.DataFrame, df_a
                     .rename_axis(coluna_alvo)
                     .reset_index(name="quantidade")
                 )
+
                 st.bar_chart(dist.head(25), x=coluna_alvo, y="quantidade", use_container_width=True)
                 st.dataframe(dist, use_container_width=True, hide_index=True)
             else:
                 st.info("Sem dados para esta coluna.")
 
 
+# =========================================================
+# CABEÇALHO
+# =========================================================
 st.markdown(
     """
     <div class="hero">
+        <div class="hero-badge">⚡ 100% local • sem APIs externas</div>
         <h1>🏷️ Classificador Local de SKUs</h1>
-        <p>Classificação 100% local por dicionário de regex.</p>
+        <p>
+            Classifique produtos por dicionário de regex, escolha quais colunas serão analisadas
+            e baixe a planilha final com resumo, auditoria e estatísticas.
+        </p>
+        <div class="hero-grid">
+            <div class="hero-mini"><b>🔒 Seguro:</b><br>arquivos lidos apenas em memória.</div>
+            <div class="hero-mini"><b>🧩 Flexível:</b><br>várias colunas alvo no mesmo dicionário.</div>
+            <div class="hero-mini"><b>📈 Auditável:</b><br>mostra regex, status e descrição usada.</div>
+        </div>
     </div>
     """,
     unsafe_allow_html=True,
 )
 
+
+# =========================================================
+# SIDEBAR
+# =========================================================
 with st.sidebar:
     st.header("📁 Arquivos")
     st.caption("Os arquivos são lidos em memória apenas durante a sessão.")
@@ -327,23 +642,57 @@ with st.sidebar:
         use_container_width=True,
     )
 
-    file_base = st.file_uploader("Base de SKUs", type=["xlsx", "csv"], help="Planilha com as descrições dos produtos.")
-    file_dict = st.file_uploader("Dicionário de classificação", type=["xlsx", "csv"], help="Planilha com Coluna Alvo, Regex e Classificacao.")
+    file_base = st.file_uploader(
+        "Base de SKUs",
+        type=["xlsx", "xls", "csv"],
+        help="Planilha com as descrições dos produtos.",
+    )
+
+    file_dict = st.file_uploader(
+        "Dicionário de classificação",
+        type=["xlsx", "xls", "csv"],
+        help="Planilha com Coluna Alvo, Regex e Classificacao.",
+    )
 
     st.divider()
     st.header("⚙️ Configuração")
 
+
+# =========================================================
+# ESTADO INICIAL
+# =========================================================
 if not file_base or not file_dict:
     st.info("Envie a base de SKUs e o dicionário para configurar a classificação.")
-    col_a, col_b, col_c = st.columns(3)
-    with col_a:
-        st.markdown("<div class='step-card'><b>1. Base</b><br>Faça upload da planilha com os SKUs.</div>", unsafe_allow_html=True)
-    with col_b:
-        st.markdown("<div class='step-card'><b>2. Dicionário</b><br>Use seu dicionário ou baixe o modelo de exemplo.</div>", unsafe_allow_html=True)
-    with col_c:
-        st.markdown("<div class='step-card'><b>3. Resultado</b><br>Baixe a base classificada com resumo e auditoria.</div>", unsafe_allow_html=True)
+
+    st.markdown(
+        """
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <h3>Envie a base</h3>
+                <p>Faça upload da planilha com os SKUs que serão classificados.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <h3>Envie o dicionário</h3>
+                <p>Use seu dicionário de regex ou baixe o modelo de exemplo.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <h3>Baixe o resultado</h3>
+                <p>Receba a base classificada com resumo, auditoria e gráficos.</p>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
     st.stop()
 
+
+# =========================================================
+# LEITURA DOS ARQUIVOS
+# =========================================================
 try:
     df_base = carregar_planilha(file_base)
     df_dict = carregar_planilha(file_dict)
@@ -351,14 +700,18 @@ except Exception as erro:
     st.error(f"Erro ao carregar os arquivos: {erro}")
     st.stop()
 
+
 if df_base.empty:
     st.error("A base de SKUs está vazia.")
     st.stop()
 
+
 colunas_dicionario = listar_colunas_dicionario(df_dict)
+
 if not colunas_dicionario:
     st.error("Não encontrei a coluna 'Coluna Alvo' no dicionário.")
     st.stop()
+
 
 with st.sidebar:
     colunas_texto = st.multiselect(
@@ -379,37 +732,54 @@ with st.sidebar:
         "Sobrescrever colunas já preenchidas",
         options=colunas_alvo,
         default=[],
-        help="Se deixar vazio, o app só preenche células vazias, '-' ou N/D.",
+        help="Se deixar vazio, o app só preenche células vazias, '-', NULL ou N/D.",
     )
 
-    executar = st.button("🚀 Iniciar classificação local", type="primary", use_container_width=True)
+    executar = st.button("Iniciar classificação local", type="primary", use_container_width=True)
 
-st.success(f"Base carregada com {len(df_base):,} linhas e {len(df_base.columns)} colunas.".replace(",", "."))
-st.caption(f"Dicionário carregado com {len(df_dict):,} regras brutas.".replace(",", "."))
 
-with st.expander("👀 Prévia da base", expanded=False):
+# =========================================================
+# PRÉVIAS
+# =========================================================
+col_info1, col_info2, col_info3 = st.columns(3)
+
+with col_info1:
+    st.success(f"Base carregada: {len(df_base):,} linhas".replace(",", "."))
+with col_info2:
+    st.info(f"{len(df_base.columns)} colunas na base")
+with col_info3:
+    st.info(f"{len(df_dict):,} regras no dicionário".replace(",", "."))
+
+
+with st.expander("Prévia da base", expanded=False):
+    st.caption("Mostrando apenas as primeiras 20 linhas da base enviada.")
     st.dataframe(df_base.head(20), use_container_width=True)
 
-with st.expander("📚 Prévia do dicionário", expanded=False):
-    st.dataframe(df_dict.head(30), use_container_width=True)
+with st.expander("Prévia do dicionário", expanded=False):
+    st.caption("Mostrando apenas as primeiras 40 regras do dicionário enviado.")
+    st.dataframe(df_dict.head(40), use_container_width=True)
 
 if not executar:
     st.info("Configure as colunas na barra lateral e clique em **Iniciar classificação local**.")
     st.stop()
 
+
 if not colunas_texto:
     st.warning("Selecione pelo menos uma coluna da base para servir como texto de classificação.")
     st.stop()
 
+
 if not colunas_alvo:
     st.warning("Selecione pelo menos uma coluna alvo para classificar.")
     st.stop()
+
 
 try:
     classificador = SKUClassifier(df_dict, colunas_alvo)
 except Exception as erro:
     st.error(f"Erro no dicionário: {erro}")
     st.stop()
+
 
 progress_bar = st.progress(0)
 status_text = st.empty()
@@ -420,6 +790,7 @@ def atualizar_progresso(atual: int, total: int):
     progress_bar.progress(min(percentual, 1.0))
     status_text.write(f"Processando linha {atual} de {total}...")
 
+
 try:
     with st.spinner("Classificando localmente com base no dicionário..."):
         df_resultado, df_auditoria = classificador.processar_dataframe(
@@ -428,20 +799,27 @@ try:
             colunas_sobrescrever=colunas_sobrescrever,
             callback_progresso=atualizar_progresso,
         )
+
         df_resumo = SKUClassifier.montar_resumo(df_auditoria)
+
 except Exception as erro:
     st.error(f"Erro durante a classificação: {erro}")
     st.stop()
+
 
 progress_bar.progress(1.0)
 status_text.write("Classificação concluída.")
 st.success("🎉 Classificação local concluída com sucesso!")
 
+
 desenhar_dashboard(df_resultado, df_resumo, df_auditoria, colunas_alvo)
 
+
 st.divider()
-st.subheader("💾 Baixar resultado")
+abrir_secao("Baixar resultado", "💾")
+
 resultado_bytes = preparar_download_excel(df_resultado, df_resumo, df_auditoria)
+
 st.download_button(
     label="📥 Baixar base classificada (.xlsx)",
     data=resultado_bytes,
@@ -451,5 +829,8 @@ st.download_button(
     use_container_width=True,
 )
 
-with st.expander("🔎 Prévia do resultado", expanded=False):
+with st.expander("Prévia do resultado", expanded=False):
     st.dataframe(df_resultado.head(50), use_container_width=True)
+
+with st.expander("Prévia da auditoria", expanded=False):
+    st.dataframe(df_auditoria.head(100), use_container_width=True)

@@ -85,7 +85,7 @@ class SKUClassifier:
             & (df["Classificacao"] != "")
         ].copy()
 
-        df.sort_values(["Coluna Alvo", "Prioridade"], inplace=True)
+        df.sort_values(["Coluna Alvo", "Prioridade"], inplace=True, kind="stable")
         return df
 
     def _construir_regras(self) -> tuple[dict[str, list[RegraClassificacao]], dict[str, str]]:
@@ -93,12 +93,12 @@ class SKUClassifier:
         fallbacks: dict[str, str] = {}
 
         for _, row in self.df_dicionario.iterrows():
-            coluna = row["Coluna Alvo"]
-            if TextUtils.normalizar(coluna) not in self.colunas_alvo:
+            coluna = TextUtils.normalizar(row["Coluna Alvo"])
+            if coluna not in self.colunas_alvo:
                 continue
 
-            regex = row["Regex"]
-            classificacao = row["Classificacao"]
+            regex = str(row["Regex"]).strip()
+            classificacao = TextUtils.normalizar(row["Classificacao"])
             prioridade = int(row["Prioridade"])
 
             if regex == ".*":
@@ -117,6 +117,8 @@ class SKUClassifier:
         return regras, fallbacks
 
     def _classificar_coluna(self, texto: str, coluna_alvo: str) -> tuple[str, str, str]:
+        coluna_alvo = TextUtils.normalizar(coluna_alvo)
+
         for regra in self.regras.get(coluna_alvo, []):
             try:
                 if re.search(regra.regex, texto, flags=re.IGNORECASE):
@@ -128,6 +130,21 @@ class SKUClassifier:
             return self.fallbacks[coluna_alvo], "FALLBACK", ".*"
 
         return "-", "NAO_CLASSIFICADO", ""
+
+    @staticmethod
+    def _montar_descricao_auditoria(row: pd.Series, colunas_texto: list[str]) -> str:
+        partes = []
+
+        for coluna in colunas_texto:
+            valor = row.get(coluna, "")
+            if pd.isna(valor):
+                continue
+
+            valor_texto = str(valor).strip()
+            if valor_texto:
+                partes.append(f"{coluna}: {valor_texto}")
+
+        return " | ".join(partes)
 
     def processar_dataframe(
         self,
@@ -144,6 +161,7 @@ class SKUClassifier:
 
         mapa_saida: dict[str, str] = {}
         for coluna_alvo in self.colunas_alvo:
+            coluna_alvo = TextUtils.normalizar(coluna_alvo)
             existente = TextUtils.coluna_case_insensitive(df_resultado, coluna_alvo)
             coluna_saida = existente or coluna_alvo
 
@@ -151,16 +169,17 @@ class SKUClassifier:
                 df_resultado[coluna_saida] = ""
 
             df_resultado[coluna_saida] = df_resultado[coluna_saida].astype(object)
-
             mapa_saida[coluna_alvo] = coluna_saida
 
         auditoria: list[dict[str, Any]] = []
         total = len(df_resultado)
 
         for posicao, (idx, row) in enumerate(df_resultado.iterrows(), start=1):
+            descricao_sku_usada = self._montar_descricao_auditoria(row, colunas_texto)
             texto_base = TextUtils.combinar_texto_linha(row, colunas_texto)
 
             for coluna_alvo in self.colunas_alvo:
+                coluna_alvo = TextUtils.normalizar(coluna_alvo)
                 coluna_saida = mapa_saida[coluna_alvo]
                 valor_atual = row.get(coluna_saida, "")
                 deve_classificar = coluna_alvo in colunas_sobrescrever or TextUtils.precisa_preencher(valor_atual)
@@ -180,6 +199,8 @@ class SKUClassifier:
                         "coluna_saida": coluna_saida,
                         "status": status,
                         "classificacao": classificacao,
+                        "descricao_sku_usada": descricao_sku_usada,
+                        "texto_normalizado_usado": texto_base,
                         "regex_usada": regex_usada,
                     }
                 )
